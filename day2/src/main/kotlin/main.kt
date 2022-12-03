@@ -32,7 +32,7 @@ fun Result.vs(shape: Shape): Shape =
   }
 
 fun main() {
-  File("inputs/day2")
+  File("input")
     .reader()
     .useLines { lines ->
       lines.fold(0) { score: Int, line: String ->

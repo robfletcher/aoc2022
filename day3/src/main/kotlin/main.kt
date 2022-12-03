@@ -8,7 +8,7 @@ fun main() {
 }
 
 fun part1() {
-  File("inputs/day3")
+  File("input")
     .reader()
     .useLines { lines ->
       lines.fold(0) { total, line ->
@@ -26,7 +26,7 @@ fun String.halve() =
   }
 
 fun part2() {
-  File("inputs/day3")
+  File("input")
     .reader()
     .useLines { lines ->
       lines.chunked(3).fold(0) { total, (l1, l2, l3) ->

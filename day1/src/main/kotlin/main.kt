@@ -1,7 +1,7 @@
 import java.io.File
 
 fun main() {
-  File("inputs/day1")
+  File("input")
     .reader()
     .useLines { lines ->
       lines.fold(0 to emptyList<Int>()) { (sum, totals), line ->
