@@ -8,7 +8,7 @@ fun part1() {
         line
           .split(',', limit = 2)
           .map(String::parseRange)
-          .sortedByDescending { it.size }
+          .sortedByDescending(IntRange::size)
           .let { (larger, smaller) -> larger.containsAll(smaller) }
       }
     }
