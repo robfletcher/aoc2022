@@ -7,20 +7,14 @@ fun part1(input: File) =
         line
           .split(',', limit = 2)
           .map { it.parseRange() }
-          .sortedByDescending { it.size }
-          .let { (larger, smaller) -> larger.containsAll(smaller) }
+          .sortedByDescending { it.count() }
+          .let { (larger, smaller) -> (smaller - larger).isEmpty() }
       }
     }
 
 fun String.parseRange() =
   split('-', limit = 2)
     .let { (a, b) -> a.toInt()..b.toInt() }
-
-fun IntRange.containsAll(other: IntRange) =
-  other.first >= first && other.last <= last
-
-val IntRange.size
-  get() = (endInclusive - start) + 1
 
 fun part2(input: File) =
   input
@@ -29,12 +23,9 @@ fun part2(input: File) =
         line
           .split(',', limit = 2)
           .map { it.parseRange() }
-          .let { (a, b) -> a.overlaps(b) }
+          .let { (a, b) -> a.intersect(b).isNotEmpty() }
       }
     }
-
-fun IntRange.overlaps(other: IntRange) =
-  first <= other.last && last >= other.first
 
 val input = File("inputs/day4")
 part1(input).also(::println).also { assert(it == 507) }
