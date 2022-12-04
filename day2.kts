@@ -1,6 +1,6 @@
-import Result.Lose
-import Result.Tie
-import Result.Win
+import Day2.Result.Lose
+import Day2.Result.Tie
+import Day2.Result.Win
 import java.io.File
 
 enum class Result(val score: Int, val code: String) {
@@ -31,17 +31,14 @@ fun Result.vs(shape: Shape): Shape =
     Lose -> shape.beats
   }
 
-fun main() {
-  File("input")
-    .reader()
-    .useLines { lines ->
-      lines.fold(0) { score: Int, line: String ->
-        val (opponent, intent) = line.split(" ", limit = 2).let { (a, b) -> a.shape() to b.strategy() }
-        val move = intent.vs(opponent)
-        println("Opponent plays $opponent and we want to $intent so we play $move")
-        score + move.score + intent.score
-      }
+File("inputs/day2")
+  .useLines { lines ->
+    lines.fold(0) { score: Int, line: String ->
+      val (opponent, intent) = line.split(" ", limit = 2).let { (a, b) -> a.shape() to b.strategy() }
+      val move = intent.vs(opponent)
+      println("Opponent plays $opponent and we want to $intent so we play $move")
+      score + move.score + intent.score
     }
-    .also { println("Total score: $it") }
-    .also { assert(it == 11258) }
-}
+  }
+  .also { println("Total score: $it") }
+  .also { assert(it == 11258) }

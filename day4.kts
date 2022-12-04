@@ -1,20 +1,16 @@
 import java.io.File
 
-fun part1() {
-  File("input")
-    .reader()
+fun part1(input: File) =
+  input
     .useLines { lines ->
       lines.count { line ->
         line
           .split(',', limit = 2)
-          .map(String::parseRange)
-          .sortedByDescending(IntRange::size)
+          .map { it.parseRange() }
+          .sortedByDescending { it.size }
           .let { (larger, smaller) -> larger.containsAll(smaller) }
       }
     }
-    .also(::println)
-    .also { assert(it == 507) }
-}
 
 fun String.parseRange() =
   split('-', limit = 2)
@@ -26,25 +22,20 @@ fun IntRange.containsAll(other: IntRange) =
 val IntRange.size
   get() = (endInclusive - start) + 1
 
-fun part2() {
-  File("input")
-    .reader()
+fun part2(input: File) =
+  input
     .useLines { lines ->
       lines.count { line ->
         line
           .split(',', limit = 2)
-          .map(String::parseRange)
+          .map { it.parseRange() }
           .let { (a, b) -> a.overlaps(b) }
       }
     }
-    .also(::println)
-    .also { assert(it == 897) }
-}
 
 fun IntRange.overlaps(other: IntRange) =
   first <= other.last && last >= other.first
 
-fun main() {
-  part1()
-  part2()
-}
+val input = File("inputs/day4")
+part1(input).also(::println).also { assert(it == 507) }
+part2(input).also(::println).also { assert(it == 897) }
