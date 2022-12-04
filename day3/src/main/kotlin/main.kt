@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalStdlibApi::class)
+
 import java.io.File
 
 val values = listOf(' ') + ('a'..'z') + ('A'..'Z')
@@ -22,7 +24,7 @@ fun part1() {
 
 fun String.halve() =
   (length / 2).let { mid ->
-    slice(0 until mid) to slice(mid until length)
+    slice(0..<mid) to slice(mid..<length)
   }
 
 fun part2() {
