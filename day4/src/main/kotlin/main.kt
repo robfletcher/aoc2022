@@ -17,10 +17,8 @@ fun part1() {
 }
 
 fun String.parseRange() =
-  Regex("""(\d+)-(\d+)""")
-    .matchEntire(this)!!
-    .groupValues
-    .let { (_, a, b) -> a.toInt()..b.toInt() }
+  split('-', limit = 2)
+    .let { (a, b) -> a.toInt()..b.toInt() }
 
 fun IntRange.containsAll(other: IntRange) =
   other.first >= first && other.last <= last
