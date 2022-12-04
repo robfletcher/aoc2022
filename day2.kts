@@ -31,14 +31,15 @@ fun Result.vs(shape: Shape): Shape =
     Lose -> shape.beats
   }
 
-File("inputs/day2")
-  .useLines { lines ->
-    lines.fold(0) { score: Int, line: String ->
-      val (opponent, intent) = line.split(" ", limit = 2).let { (a, b) -> a.shape() to b.strategy() }
-      val move = intent.vs(opponent)
-      println("Opponent plays $opponent and we want to $intent so we play $move")
-      score + move.score + intent.score
+fun part2(input: File) =
+  input
+    .useLines { lines ->
+      lines.fold(0) { score: Int, line: String ->
+        val (opponent, intent) = line.split(" ", limit = 2).let { (a, b) -> a.shape() to b.strategy() }
+        val move = intent.vs(opponent)
+        score + move.score + intent.score
+      }
     }
-  }
-  .also { println("Total score: $it") }
-  .also { assert(it == 11258) }
+
+val input = File("inputs/day2")
+part2(input).also(::println).also { assert(it == 11258) }
