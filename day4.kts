@@ -1,5 +1,9 @@
 import java.io.File
 
+val input = File("inputs/day4")
+part1(input).also(::println).also { assert(it == 507) }
+part2(input).also(::println).also { assert(it == 897) }
+
 fun part1(input: File) =
   input.useLines { lines ->
     lines.count { line ->
@@ -24,7 +28,3 @@ fun part2(input: File) =
         .let { (a, b) -> a.intersect(b).isNotEmpty() }
     }
   }
-
-val input = File("inputs/day4")
-part1(input).also(::println).also { assert(it == 507) }
-part2(input).also(::println).also { assert(it == 897) }

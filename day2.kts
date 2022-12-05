@@ -3,6 +3,9 @@ import Day2.Result.Tie
 import Day2.Result.Win
 import java.io.File
 
+val input = File("inputs/day2")
+part2(input).also(::println).also { assert(it == 11258) }
+
 enum class Result(val score: Int, val code: String) {
   Lose(0, "X"), Tie(3, "Y"), Win(6, "Z")
 }
@@ -39,6 +42,3 @@ fun part2(input: File) =
       score + move.score + intent.score
     }
   }
-
-val input = File("inputs/day2")
-part2(input).also(::println).also { assert(it == 11258) }

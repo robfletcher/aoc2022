@@ -2,6 +2,10 @@ import java.io.File
 
 val values = listOf(' ') + ('a'..'z') + ('A'..'Z')
 
+val input = File("inputs/day3")
+part1(input).also(::println).also { assert(it == 7817) }
+part2(input).also(::println).also { assert(it == 2444) }
+
 fun part1(input: File) =
   input.useLines { lines ->
     lines.fold(0) { total, line ->
@@ -21,7 +25,3 @@ fun part2(input: File) =
       total + l1.first { it in l2 && it in l3 }.let(values::indexOf)
     }
   }
-
-val input = File("inputs/day3")
-part1(input).also(::println).also { assert(it == 7817) }
-part2(input).also(::println).also { assert(it == 2444) }

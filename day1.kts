@@ -1,5 +1,8 @@
 import java.io.File
 
+val input = File("inputs/day1")
+part2(input).also(::println).also { assert(it == 213958) }
+
 fun part2(input: File) =
   input.useLines { lines ->
     lines.fold(0 to emptyList<Int>()) { (sum, totals), line ->
@@ -11,6 +14,3 @@ fun part2(input: File) =
     }
   }
     .let { (_, totals) -> totals.sum() }
-
-val input = File("inputs/day1")
-part2(input).also(::println).also { assert(it == 213958) }
