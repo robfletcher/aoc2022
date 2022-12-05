@@ -32,14 +32,13 @@ fun Result.vs(shape: Shape): Shape =
   }
 
 fun part2(input: File) =
-  input
-    .useLines { lines ->
-      lines.fold(0) { score: Int, line: String ->
-        val (opponent, intent) = line.split(" ", limit = 2).let { (a, b) -> a.shape() to b.strategy() }
-        val move = intent.vs(opponent)
-        score + move.score + intent.score
-      }
+  input.useLines { lines ->
+    lines.fold(0) { score: Int, line: String ->
+      val (opponent, intent) = line.split(" ", limit = 2).let { (a, b) -> a.shape() to b.strategy() }
+      val move = intent.vs(opponent)
+      score + move.score + intent.score
     }
+  }
 
 val input = File("inputs/day2")
 part2(input).also(::println).also { assert(it == 11258) }
