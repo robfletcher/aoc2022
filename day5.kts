@@ -38,7 +38,7 @@ fun List<String>.parseStacks(): List<MutableList<Crate>> {
   val stacks = mutableListOf<MutableList<Crate>>()
   reversed().forEach { line ->
     line.chunked(4).forEachIndexed { index, chunk ->
-      val parser = Regex("""\[(\w)\]\s?""")
+      val parser = Regex("""\[(\w)]\s?""")
       parser.matchEntire(chunk)?.groupValues?.also { (_, label) ->
         while (index >= stacks.size) {
           stacks.add(mutableListOf<Crate>())
