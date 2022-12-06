@@ -4,27 +4,28 @@ val input = File("inputs/day5")
 part1(input).also(::println).also { assert(it == "VJSFHWGFT") }
 part2(input).also(::println).also { assert(it == "LCTQFBVZV") }
 
-inline class Crate(val label: String)
+@JvmInline
+value class Crate(val label: String)
 
 data class Instruction(val count: Int, val from: Int, val to: Int)
 
 fun part1(input: File) =
-  solve { stacks, instruction ->
+  input.solve { stacks, instruction ->
     repeat(instruction.count) {
       stacks[instruction.to - 1].add(stacks[instruction.from - 1].removeLast())
     }
   }
 
 fun part2(input: File) =
-  solve { stacks, instruction ->
+  input.solve { stacks, instruction ->
     (0 until instruction.count)
       .map { stacks[instruction.from - 1].removeLast() }
       .reversed()
       .forEach { stacks[instruction.to - 1].add(it) }
   }
 
-fun solve(instructionHandler: (List<MutableList<Crate>>, Instruction) -> Unit): String {
-  val lines = input.readLines()
+fun File.solve(instructionHandler: (List<MutableList<Crate>>, Instruction) -> Unit): String {
+  val lines = readLines()
   val stacks = lines.takeWhile { it.isNotBlank() }.parseStacks()
   val instructions = lines.parseInstructions()
   instructions.forEach { instruction ->
