@@ -16,15 +16,14 @@ fun main() {
 
   fun part2(input: Reader) =
     input.useLines { lines ->
-      lines.fold(0 to emptyList<Int>()) { (sum, totals), line ->
+      lines.fold(listOf(0)) { totals, line ->
         if (line.isBlank()) {
-          0 to (totals + sum).sortedDescending().take(3)
+          totals + 0
         } else {
-          sum + line.toInt() to totals
+          totals.dropLast(1) + (totals.last() + line.toInt())
         }
       }
-    }
-      .let { (_, totals) -> totals.sum() }
+    }.sortedDescending().take(3).sum()
 
   val testInput = """
     1000
