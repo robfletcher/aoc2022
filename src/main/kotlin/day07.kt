@@ -16,8 +16,8 @@ data class Directory(
   val root: Directory
     get() = parent?.root ?: this
 
-  val subdirectories: List<Directory>
-    get() = listOf(this) + contents.filterIsInstance<Directory>().flatMap { it.subdirectories }
+  val directoryTree: List<Directory>
+    get() = listOf(this) + contents.filterIsInstance<Directory>().flatMap { it.directoryTree }
 }
 
 data class File(
@@ -26,40 +26,46 @@ data class File(
 ) : Node
 
 fun main() {
-  fun part1(input: Reader): Int {
+  fun buildFilesystem(input: Reader): Directory {
     val root = Directory(name = "/", parent = null)
-    val itr = input.readLines().listIterator()
     var context = root
-
-    while (itr.hasNext()) {
-      val line = itr.next()
-      if (line.startsWith("\$ cd")) {
-        val target = line.substringAfterLast(' ')
-        context = when (target) {
-          "/" -> context.root
-          ".." -> checkNotNull(context.parent) { "Already at root" }
-          else -> context
-            .contents
-            .filterIsInstance<Directory>()
-            .find { it.name == target }
-            ?: error("No such directory $target")
-        }
-      } else if (line == "\$ ls") {
-        var done = false
-        while (!done && itr.hasNext()) {
-          val target = itr.next()
-          if (target.startsWith('$')) {
-            itr.previous()
-            done = true
-          } else if (target.startsWith("dir ")) {
-            context.contents.add(Directory(name = target.substringAfter(' '), parent = context))
-          } else {
-            context.contents.add(File(name = target.substringAfter(' '), size = target.substringBefore(' ').toInt()))
+    input.forEachLine { line ->
+      when {
+        line.startsWith("\$ cd") ->
+          context = when (val target = line.substringAfterLast(' ')) {
+            "/" -> context.root
+            ".." -> checkNotNull(context.parent) { "Already at root" }
+            else -> context
+              .contents
+              .filterIsInstance<Directory>()
+              .find { it.name == target }
+              ?: error("No such directory $target")
           }
-        }
+
+        line.startsWith("dir ") ->
+          Directory(name = line.substringAfter(' '), parent = context)
+            .also { context.contents.add(it) }
+
+        line.contains("""^\d+""".toRegex()) ->
+          line.split(' ', limit = 2)
+            .let { (size, name) -> File(name = name, size = size.toInt()) }
+            .also { context.contents.add(it) }
       }
     }
-    return root.subdirectories.filter { it.size <= 100000 }.sumOf { it.size }
+    return root
+  }
+
+  fun part1(input: Reader) = buildFilesystem(input)
+    .directoryTree
+    .filter { it.size <= 100000 }
+    .sumOf { it.size }
+
+  fun part2(input: Reader): Int {
+    val root = buildFilesystem(input)
+    val totalSpace = 70000000
+    val freeSpace = totalSpace - root.size
+    val needToFree = 30000000 - freeSpace
+    return root.directoryTree.filter { it.size >= needToFree }.minOf { it.size }
   }
 
   val testInput = """
@@ -88,7 +94,9 @@ fun main() {
     7214296 k
   """.trimIndent()
   assert(part1(testInput.reader()) == 95437)
+  assert(part2(testInput.reader()) == 24933642)
 
   val input = readInput("day07")
   part1(input()).also(::println)
+  part2(input()).also(::println)
 }
