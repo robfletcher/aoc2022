@@ -1,7 +1,7 @@
 import Result.Lose
 import Result.Tie
 import Result.Win
-import java.io.File
+import java.io.Reader
 
 enum class Result(val score: Int, val code: String) {
   Lose(0, "X"), Tie(3, "Y"), Win(6, "Z")
@@ -41,7 +41,7 @@ fun main() {
       Lose -> shape.beats
     }
 
-  fun part1(input: File) =
+  fun part1(input: Reader) =
     input.useLines { lines ->
       lines.fold(0) { score: Int, line: String ->
         val (opponent, move) = line.split(' ', limit = 2).map { it.shape() }
@@ -49,7 +49,7 @@ fun main() {
       }
     }
 
-  fun part2(input: File) =
+  fun part2(input: Reader) =
     input.useLines { lines ->
       lines.fold(0) { score: Int, line: String ->
         val (opponent, intent) = line.split(' ', limit = 2).let { (a, b) -> a.shape() to b.strategy() }
@@ -58,7 +58,14 @@ fun main() {
       }
     }
 
+  val testInput = """
+    A Y
+    B X
+    C Z""".trimIndent()
+  assert(part1(testInput.reader()) == 15)
+  assert(part2(testInput.reader()) == 12)
+
   val input = readInput("day02")
-  part1(input).also(::println).also { assert(it == 14531) }
-  part2(input).also(::println).also { assert(it == 11258) }
+  part1(input()).also(::println)
+  part2(input()).also(::println)
 }

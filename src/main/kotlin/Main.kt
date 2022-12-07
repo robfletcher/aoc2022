@@ -1,6 +1,7 @@
-import java.io.File
+import java.io.Reader
 
 object Main
 
-fun readInput(name: String): File =
-  File(Main.javaClass.getResource(name)?.file ?: error("input file $name not found"))
+fun readInput(name: String): () -> Reader = {
+  Main.javaClass.getResourceAsStream(name)?.reader() ?: error("input file $name not found")
+}
