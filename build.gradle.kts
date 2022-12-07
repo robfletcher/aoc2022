@@ -12,7 +12,6 @@ repositories {
 tasks.withType<KotlinCompile> {
   kotlinOptions {
     languageVersion = "1.8"
-    allWarningsAsErrors = true
   }
 }
 
