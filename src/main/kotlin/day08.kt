@@ -1,44 +1,55 @@
 import java.io.Reader
 
-data class Coordinate(val x: Int, val y: Int)
+data class Coordinate(val x: Int, val y: Int) {
+  fun up() = copy(y = y - 1)
+  fun left() = copy(x = x - 1)
+  fun down() = copy(y = y + 1)
+  fun right() = copy(x = x + 1)
+
+  companion object {
+    val traversals = listOf(Coordinate::up, Coordinate::left, Coordinate::down, Coordinate::right)
+  }
+}
+typealias Forest = Map<Coordinate, Int>
+typealias Tree = Map.Entry<Coordinate, Int>
 
 fun main() {
-  fun mapTrees(input: Reader): Map<Coordinate, Int> {
-    val map = mutableMapOf<Coordinate, Int>()
-    input.useLines { lines ->
-      lines.forEachIndexed { y, line ->
-        line.forEachIndexed { x, c ->
-          map[Coordinate(x, y)] = c.digitToInt()
+  fun mapForest(input: Reader): Forest =
+    mutableMapOf<Coordinate, Int>().apply {
+      input.useLines { lines ->
+        lines.forEachIndexed { y, line ->
+          line.forEachIndexed { x, c ->
+            put(Coordinate(x, y), c.digitToInt())
+          }
         }
       }
     }
-    return map
+
+  fun Forest.pathToEdge(tree: Tree, traversal: (Coordinate) -> Coordinate) =
+    generateSequence(tree.key, traversal).drop(1).takeWhile { get(it) != null }
+
+  fun Forest.isVisibleFromEdge(tree: Tree, traversal: (Coordinate) -> Coordinate) =
+    pathToEdge(tree, traversal).none { getValue(it) >= tree.value }
+
+  fun Forest.viewingDistanceFrom(tree: Tree, traversal: (Coordinate) -> Coordinate): Int {
+    val path = pathToEdge(tree, traversal)
+    val distance = path.indexOfFirst { getValue(it) >= tree.value }
+    return if (distance < 0) path.count() else distance + 1
   }
 
-  fun part1(input: Reader): Int {
-    val map = mapTrees(input)
-    return map.count { (coordinate, height) ->
-      map.none { it.key.x == coordinate.x && it.key.y < coordinate.y && it.value >= height }
-        || map.none { it.key.x == coordinate.x && it.key.y > coordinate.y && it.value >= height }
-        || map.none { it.key.x < coordinate.x && it.key.y == coordinate.y && it.value >= height }
-        || map.none { it.key.x > coordinate.x && it.key.y == coordinate.y && it.value >= height }
+  fun part1(input: Reader): Int =
+    mapForest(input).run {
+      count { tree ->
+        Coordinate.traversals.any { isVisibleFromEdge(tree, it) }
+      }
     }
-  }
 
-  fun part2(input: Reader): Int {
-    val map = mapTrees(input)
-    return map.maxOf { (coordinate, height) ->
-      val up = map.keys.filter { it.x == coordinate.x && it.y < coordinate.y }.sortedByDescending { it.y }
-        .run { indexOfFirst { map.getValue(it) >= height }.let { if (it < 0) size else it + 1 } }
-      val left = map.keys.filter { it.x < coordinate.x && it.y == coordinate.y }.sortedByDescending { it.x }
-        .run { indexOfFirst { map.getValue(it) >= height }.let { if (it < 0) size else it + 1 } }
-      val down = map.keys.filter { it.x == coordinate.x && it.y > coordinate.y }.sortedBy { it.y }
-        .run { indexOfFirst { map.getValue(it) >= height }.let { if (it < 0) size else it + 1 } }
-      val right = map.keys.filter { it.x > coordinate.x && it.y == coordinate.y }.sortedBy { it.x }
-        .run { indexOfFirst { map.getValue(it) >= height }.let { if (it < 0) size else it + 1 } }
-      left * right * up * down
+  fun part2(input: Reader): Int =
+    mapForest(input).run {
+      maxOf { tree ->
+        Coordinate.traversals.map { viewingDistanceFrom(tree, it) }.reduce { acc, i -> acc * i }
+      }
     }
-  }
 
   val testInput = """
     30373
@@ -51,6 +62,6 @@ fun main() {
   assert(part2(testInput.reader()) == 8)
 
   val input = readInput("day08")
-  part1(input()).also(::println)
-  part2(input()).also(::println)
+  part1(input()).also(::println).also { assert(it == 1825) }
+  part2(input()).also(::println).also { assert(it == 235200) }
 }
