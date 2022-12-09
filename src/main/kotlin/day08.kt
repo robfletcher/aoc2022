@@ -1,9 +1,9 @@
 import java.io.Reader
 
 data class Coordinate(val x: Int, val y: Int) {
-  fun up() = copy(y = y - 1)
+  fun up() = copy(y = y + 1)
   fun left() = copy(x = x - 1)
-  fun down() = copy(y = y + 1)
+  fun down() = copy(y = y - 1)
   fun right() = copy(x = x + 1)
 
   companion object {
