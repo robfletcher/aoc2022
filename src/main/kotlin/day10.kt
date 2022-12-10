@@ -1,16 +1,22 @@
 import java.io.Reader
+import java.lang.StringBuilder
 
+@OptIn(ExperimentalStdlibApi::class)
 fun main() {
 
-  fun part1(input: Reader): Int {
-    val register = mutableListOf(1)
-    val pattern = """addx (-?\d+)""".toRegex()
-    input.forEachLine { line ->
-      register.add(register.last())
-      pattern.matchEntire(line)?.groupValues?.also { (_, v) ->
-        register.add(register.last() + v.toInt())
+  fun scan(input: Reader): List<Int> =
+    mutableListOf(1).apply {
+      val pattern = """addx (-?\d+)""".toRegex()
+      input.forEachLine { line ->
+        add(last())
+        pattern.matchEntire(line)?.groupValues?.also { (_, v) ->
+          add(last() + v.toInt())
+        }
       }
     }
+
+  fun part1(input: Reader): Int {
+    val register = scan(input)
     return register.foldIndexed(0) { i: Int, sum: Int, r: Int ->
       if ((i + 21) % 40 == 0) {
         sum + ((i + 1) * r)
@@ -20,8 +26,21 @@ fun main() {
     }
   }
 
-  fun part2(input: Reader) : String {
-return ""
+  fun part2(input: Reader): String {
+    val register = scan(input)
+    return StringBuilder()
+      .apply {
+        (0..<240).forEach { i ->
+          val x = i % 40
+          if (x in (register[i] - 1..register[i] + 1)) {
+            append('#')
+          } else {
+            append('.')
+          }
+          if (x == 39) append('\n')
+        }
+      }
+      .toString().trim()
   }
 
   val testInput = """
@@ -182,8 +201,9 @@ return ""
     ######......######......######......####
     #######.......#######.......#######.....
   """.trimIndent()
-//  assert(part2(testInput.reader()) == expected)
+  assert(part2(testInput.reader()) == expected)
 
   val input = readInput("day10")
   part1(input()).also(::println).also { assert(it == 14560) }
+  part2(input()).also(::println)
 }
