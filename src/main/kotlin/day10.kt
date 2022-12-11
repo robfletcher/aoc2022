@@ -1,5 +1,5 @@
 import java.io.Reader
-import java.lang.StringBuilder
+import kotlin.text.StringBuilder
 
 @OptIn(ExperimentalStdlibApi::class)
 fun main() {
@@ -32,15 +32,15 @@ fun main() {
       .apply {
         (0..<240).forEach { i ->
           val x = i % 40
-          if (x in (register[i] - 1..register[i] + 1)) {
+          if (i > 0 && x == 0) append('\n')
+          if (x in register[i].run { this - 1..this + 1 }) {
             append('#')
           } else {
             append('.')
           }
-          if (x == 39) append('\n')
         }
       }
-      .toString().trim()
+      .toString()
   }
 
   val testInput = """
