@@ -1,28 +1,33 @@
 import java.io.Reader
-import java.util.Scanner
-import kotlin.math.floor
-import kotlin.streams.toList
 
 data class Monkey(
   val items: MutableList<Long>,
   val operation: (Long) -> Long,
-  val test: (Long) -> Int
+  val divisor: Long,
+  val trueIndex: Int,
+  val falseIndex: Int
 ) {
-  private var _inspectCount = 0
+  private var _count = 0
   val inspectionCount: Int
-    get() = _inspectCount
+    get() = _count
 
   fun inspectItem(): Long =
-    items.removeFirst().let(operation).also { _inspectCount++ }
+    items.removeFirst().let(operation).also { _count++ }
 }
+
+val List<Monkey>.commonDivisor
+  get() = map { it.divisor }.reduce { acc, i -> acc * i }
 
 fun main() {
   fun parseMonkeys(input: Reader): List<Monkey> =
     mutableListOf<Monkey>().apply {
       input.readLines().chunked(7) { it ->
         Monkey(
-          items = Scanner(it[1].substringAfter("Starting items: ")).useDelimiter(", ").findAll("""\d+""")
-            .map { it.group().toLong() }.toList().toMutableList(),
+          items = """\s*Starting items: ([\d, ]+)""".toRegex()
+            .matchEntire(it[1])!!
+            .groupValues
+            .let { (_, n) -> n.split(", ").map { it.toLong() } }
+            .toMutableList(),
           operation = """\s*Operation: new = old ([*+]) (old|\d+)""".toRegex()
             .matchEntire(it[2])!!.groupValues.let { (_, op, value) ->
               when (op) {
@@ -37,26 +42,29 @@ fun main() {
                 else -> error("Unrecognized op: $op")
               }
             },
-          test = """\s*Test: divisible by (\d+)\s*If true: throw to monkey (\d+)\s*If false: throw to monkey (\d+)"""
-            .toRegex()
-            .matchEntire(it.slice(3..5).joinToString(" "))!!
+          divisor = """\s*Test: divisible by (\d+)""".toRegex()
+            .matchEntire(it[3])!!
             .groupValues
-            .let { (_, divisor, trueIndex, falseIndex) ->
-              { if (it % divisor.toLong() == 0L) trueIndex.toInt() else falseIndex.toInt() }
-            }
+            .let { (_, n) -> n.toLong() },
+          trueIndex = """\s*If true: throw to monkey (\d+)""".toRegex()
+            .matchEntire(it[4])!!
+            .groupValues
+            .let { (_, n) -> n.toInt() },
+          falseIndex = """\s*If false: throw to monkey (\d+)""".toRegex()
+            .matchEntire(it[5])!!
+            .groupValues
+            .let { (_, n) -> n.toInt() },
         )
-          .also {
-            add(it)
-          }
+          .also { add(it) }
       }
     }
 
-  fun runRound(monkeys: List<Monkey>, relief: Double) {
+  fun runRound(monkeys: List<Monkey>, relief: Int) {
     monkeys.forEach { monkey ->
       while (monkey.items.isNotEmpty()) {
-        val worry = floor(monkey.inspectItem() / relief).toLong()
-        val index = monkey.test(worry)
-        monkeys[index].items.add(worry)
+        val worry = monkey.inspectItem() / relief
+        val index = if (worry % monkey.divisor == 0L) monkey.trueIndex else monkey.falseIndex
+        monkeys[index].items.add(worry % monkeys.commonDivisor)
       }
     }
   }
@@ -65,7 +73,7 @@ fun main() {
     parseMonkeys(input)
       .let { monkeys ->
         repeat(20) {
-          runRound(monkeys, 3.0)
+          runRound(monkeys, 3)
         }
         monkeys.map { it.inspectionCount }.sortedDescending().take(2).reduce { acc, it -> acc * it }
       }
@@ -74,9 +82,9 @@ fun main() {
     parseMonkeys(input)
       .let { monkeys ->
         repeat(10000) {
-          runRound(monkeys, 2.75)
+          runRound(monkeys, 1)
         }
-        monkeys.map { it.inspectionCount.toLong() }.sortedDescending().also(::println).take(2)
+        monkeys.map { it.inspectionCount.toLong() }.sortedDescending().take(2)
           .reduce { acc, it -> acc * it }
       }
 
@@ -110,17 +118,17 @@ fun main() {
         If false: throw to monkey 1
   """.trimIndent()
   parseMonkeys(testInput.reader()).also { monkeys ->
-    val relief = 3.0
+    val relief = 3
 
     runRound(monkeys, relief)
-    assert(monkeys[0].items == listOf(20L, 23L, 27L, 26L))
-    assert(monkeys[1].items == listOf(2080L, 25L, 167L, 207L, 401L, 1046L))
+    assert(monkeys[0].items == listOf(20L, 23, 27, 26))
+    assert(monkeys[1].items == listOf(2080L, 25, 167, 207, 401, 1046))
     assert(monkeys[2].items.isEmpty())
     assert(monkeys[3].items.isEmpty())
 
     runRound(monkeys, relief)
-    assert(monkeys[0].items == listOf(695L, 10L, 71L, 135L, 350L))
-    assert(monkeys[1].items == listOf(43L, 49L, 58L, 55L, 362L))
+    assert(monkeys[0].items == listOf(695L, 10, 71, 135, 350))
+    assert(monkeys[1].items == listOf(43L, 49, 58, 55, 362))
     assert(monkeys[2].items.isEmpty())
     assert(monkeys[3].items.isEmpty())
   }
@@ -128,7 +136,7 @@ fun main() {
   assert(part1(testInput.reader()) == 10605)
 
   parseMonkeys(testInput.reader()).also { monkeys ->
-    val relief = 1.0
+    val relief = 1
 
     runRound(monkeys, relief)
     assert(monkeys[0].inspectionCount == 2)
