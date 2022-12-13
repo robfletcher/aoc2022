@@ -1,3 +1,7 @@
+import kotlinx.coroutines.Dispatchers.Default
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import java.io.Reader
 import java.util.PriorityQueue
 
@@ -72,12 +76,18 @@ fun main() {
     return checkNotNull(winner) { "No path found!" }.distance
   }
 
-  fun part1(input: Reader) = parseTerrain(input).findShortestPath()
+  fun part1(input: Reader) = runBlocking { parseTerrain(input).findShortestPath() }
 
   fun part2(input: Reader): Int {
     val terrain = parseTerrain(input)
-    val startPoints = terrain.filter { it.value.height == 'a'.height }
-    return startPoints.minOf { terrain.findShortestPath(it.key) }
+    val startPoints = terrain.filter { it.value.height == 'a'.height }.keys
+    return runBlocking(Default) {
+      startPoints.map {
+        async {
+          terrain.findShortestPath(it)
+        }
+      }.awaitAll().min()
+    }
   }
 
   val testInput = """
