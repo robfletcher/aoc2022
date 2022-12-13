@@ -9,6 +9,8 @@ data class Coordinate(val x: Int, val y: Int) {
   companion object {
     val traversals = listOf(Coordinate::up, Coordinate::left, Coordinate::down, Coordinate::right)
   }
+
+  override fun toString() = "{$x,$y}"
 }
 typealias Forest = Map<Coordinate, Int>
 typealias Tree = Map.Entry<Coordinate, Int>
