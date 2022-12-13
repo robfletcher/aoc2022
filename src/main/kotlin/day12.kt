@@ -48,16 +48,15 @@ fun main() {
       .shuffled()
 
   /** Dijkstra's algorithm. */
-  fun Terrain.findShortestPath(): Int {
-    val queue = keys.minus(start).map(::PathNode).let(::PriorityQueue)
-    queue.add(PathNode(start, 0))
+  fun Terrain.findShortestPath(from: Coordinate = this.start): Int {
+    val queue = keys.minus(from).map(::PathNode).let(::PriorityQueue)
+    queue.add(PathNode(from, 0))
     var winner: PathNode? = null
     while (winner == null && queue.isNotEmpty()) {
       val current = queue.remove()
-      println("Evaluating ${current.coordinate}")
       if (current.coordinate == goal) {
         winner = current
-      } else {
+      } else if (current.distance != Int.MAX_VALUE) {
         pathsFrom(current.coordinate).forEach { child ->
           val childNode = queue.find { it.coordinate == child }
           if (childNode != null) {
@@ -75,6 +74,12 @@ fun main() {
 
   fun part1(input: Reader) = parseTerrain(input).findShortestPath()
 
+  fun part2(input: Reader): Int {
+    val terrain = parseTerrain(input)
+    val startPoints = terrain.filter { it.value.height == 'a'.height }
+    return startPoints.minOf { terrain.findShortestPath(it.key) }
+  }
+
   val testInput = """
     Sabqponm
     abcryxxl
@@ -84,7 +89,9 @@ fun main() {
   """.trimIndent()
 
   assert(part1(testInput.reader()) == 31)
+  assert(part2(testInput.reader()) == 29)
 
   val input = readInput("day12")
   part1(input()).also(::println)
+  part2(input()).also(::println)
 }
