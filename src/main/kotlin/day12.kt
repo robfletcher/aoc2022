@@ -1,7 +1,14 @@
 import java.io.Reader
+import java.util.PriorityQueue
 
 typealias Terrain = Map<Coordinate, Char>
-typealias Path = List<Coordinate>
+
+data class PathNode(
+  val coordinate: Coordinate,
+  val distance: Int = Int.MAX_VALUE
+) : Comparable<PathNode> {
+  override fun compareTo(other: PathNode) = distance.compareTo(other.distance)
+}
 
 val Terrain.start
   get() = entries.single { (_, c) -> c == 'S' }.key
@@ -10,7 +17,7 @@ val Terrain.goal
   get() = entries.single { (_, c) -> c == 'E' }.key
 
 val Char.height
-  get() = when(this) {
+  get() = when (this) {
     'S' -> 'a'.code
     'E' -> 'z'.code
     else -> code
@@ -29,50 +36,44 @@ fun main() {
     return terrain
   }
 
-  fun Terrain.pathsFrom(coordinate: Coordinate) = coordinate.run {
-    setOf(copy(y = y + 1), copy(y = y - 1), copy(x = x + 1), copy(x = x - 1))
-  }
-    .filter {
-      val currentHeight = getValue(coordinate).height
-      val adjacentHeight = get(it)?.height
-      adjacentHeight != null && adjacentHeight <= currentHeight + 1
+  fun Terrain.pathsFrom(coordinate: Coordinate) =
+    coordinate.run {
+      setOf(copy(y = y + 1), copy(y = y - 1), copy(x = x + 1), copy(x = x - 1))
     }
-    .toSet()
+      .filter {
+        val currentHeight = getValue(coordinate).height
+        val adjacentHeight = get(it)?.height
+        adjacentHeight != null && adjacentHeight <= currentHeight + 1
+      }
+      .shuffled()
 
-  fun Terrain.findPathsToEndFrom(path: Path): Set<Path> {
-    val nextSteps = pathsFrom(path.last())
-      .filter { it !in path }
-    val end = nextSteps.find { getValue(it) == 'E' }
-    return if (end == null) {
-      nextSteps
-        .also {
-          if (it.isNotEmpty()) {
-            println("Searching ${it.size} paths from ${path.last()} with length ${path.size}")
+  /** Dijkstra's algorithm. */
+  fun Terrain.findShortestPath(): Int {
+    val queue = keys.minus(start).map(::PathNode).let(::PriorityQueue)
+    queue.add(PathNode(start, 0))
+    var winner: PathNode? = null
+    while (winner == null && queue.isNotEmpty()) {
+      val current = queue.remove()
+      println("Evaluating ${current.coordinate}")
+      if (current.coordinate == goal) {
+        winner = current
+      } else {
+        pathsFrom(current.coordinate).forEach { child ->
+          val childNode = queue.find { it.coordinate == child }
+          if (childNode != null) {
+            val distance = current.distance + 1
+            if (distance < childNode.distance) {
+              queue.remove(childNode)
+              queue.add(PathNode(child, distance))
+            }
           }
         }
-        .flatMap { findPathsToEndFrom(path + it) }
-        .also {
-          if (it.isNotEmpty()) {
-            println("Found ${it.size} paths from ${path.last()}")
-          } else {
-            println("Dead end at ${path.last()}")
-          }
-        }
-        .toSet()
-    } else {
-      setOf(path + end)
-        .also { println("Found successful path with length ${it.first().size}") }
+      }
     }
+    return checkNotNull(winner) { "No path found!" }.distance
   }
 
-  fun part1(input: Reader): Int {
-    val terrain = parseTerrain(input)
-    val initial: Path = listOf(terrain.start)
-
-    return terrain.findPathsToEndFrom(initial)
-      .also { println("Found ${it.size} paths with lengths ${it.map(List<*>::size)}") }
-      .minOf { it.size -1 }
-  }
+  fun part1(input: Reader) = parseTerrain(input).findShortestPath()
 
   val testInput = """
     Sabqponm
