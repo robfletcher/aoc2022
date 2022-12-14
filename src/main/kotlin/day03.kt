@@ -34,7 +34,6 @@ fun main() {
   assert(part1(testInput.reader()) == 157)
   assert(part2(testInput.reader()) == 70)
 
-  val input = readInput("day03")
-  part1(input()).also(::println)
-  part2(input()).also(::println)
+  execute("day03", "Part 1", ::part1)
+  execute("day03", "Part 2", ::part2)
 }

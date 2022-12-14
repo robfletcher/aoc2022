@@ -203,7 +203,6 @@ fun main() {
   """.trimIndent()
   assert(part2(testInput.reader()) == expected)
 
-  val input = readInput("day10")
-  part1(input()).also(::println).also { assert(it == 14560) }
-  part2(input()).also(::println)
+  execute("day10", "Part 1", ::part1)
+  execute("day10", "Part 2", ::part2)
 }

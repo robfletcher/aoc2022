@@ -1,10 +1,17 @@
 import java.io.Reader
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTimedValue
 
 object Main
 
-fun readInput(name: String): () -> Reader = {
+fun readInput(name: String): Reader =
   Main.javaClass.getResourceAsStream(name)?.reader() ?: error("input file $name not found")
-}
+
+@OptIn(ExperimentalTime::class)
+fun <V> execute(name: String, title: String, block: (Reader) -> V) =
+  measureTimedValue { block(readInput(name)) }
+    .apply { println("$title\n$value\nin $duration") }
+    .value
 
 fun main() {
   try {

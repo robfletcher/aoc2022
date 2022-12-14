@@ -74,7 +74,6 @@ fun main() {
   assert(part1(testInput.reader()) == "CMZ")
   assert(part2(testInput.reader()) == "MCD")
 
-  val input = readInput("day05")
-  part1(input()).also(::println)
-  part2(input()).also(::println)
+  execute("day05", "Part 1", ::part1)
+  execute("day05", "Part 2", ::part2)
 }

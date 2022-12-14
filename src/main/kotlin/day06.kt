@@ -22,7 +22,6 @@ fun main() {
     assert(part2(input.reader()) == results.last)
   }
 
-  val input = readInput("day06")
-  part1(input()).also(::println)
-  part2(input()).also(::println)
+  execute("day06", "Part 1", ::part1)
+  execute("day06", "Part 2", ::part2)
 }

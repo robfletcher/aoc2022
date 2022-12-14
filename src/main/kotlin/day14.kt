@@ -2,8 +2,8 @@ import Tile.Rock
 import Tile.Sand
 import Tile.Source
 import java.io.Reader
-import kotlin.time.ExperimentalTime
-import kotlin.time.measureTimedValue
+import kotlin.math.max
+import kotlin.math.min
 
 enum class Tile {
   Rock, Sand, Source
@@ -20,7 +20,6 @@ val Cave.yRange
 val Cave.depth
   get() = keys.maxOf { it.y }
 
-@OptIn(ExperimentalTime::class)
 fun main() {
   fun Cave.draw() {
     StringBuilder().apply {
@@ -30,7 +29,7 @@ fun main() {
             Rock -> append('#')
             Sand -> append('o')
             Source -> append('+')
-            null -> append('.')
+            null -> append(' ')
           }
         }
         append('\n')
@@ -41,6 +40,14 @@ fun main() {
 
   val sourcePos = Coordinate(500, 0)
 
+  fun Pair<Coordinate, Coordinate>.forEachBetween(action: (Coordinate) -> Unit) {
+    for (x in min(first.x, second.x)..max(first.x, second.x)) {
+      for (y in min(first.y, second.y).. max(first.y, second.y)) {
+        action(Coordinate(x, y))
+      }
+    }
+  }
+
   fun scanCave(reader: Reader) =
     mutableMapOf(sourcePos to Source).apply {
       reader.forEachLine { line ->
@@ -49,12 +56,7 @@ fun main() {
           .map { it.split(',', limit = 2).let { (x, y) -> Coordinate(x.toInt(), y.toInt()) } }
           .windowed(2)
           .forEach { (start, end) ->
-            val direction = if (start.x == end.x) Coordinate::y else Coordinate::x
-            listOf(direction.get(start), direction.get(end))
-              .let { it.min()..it.max() }
-              .forEach { i ->
-                put(if (direction == Coordinate::x) start.copy(x = i) else start.copy(y = i), Rock)
-              }
+            (start to end).forEachBetween { put(it, Rock) }
           }
       }
     }
@@ -95,7 +97,7 @@ fun main() {
         cave[rest] = Sand
       }
     }
-    return cave.count { it.value == Sand }
+    return cave.apply { draw() }.count { it.value == Sand }
   }
 
   fun part2(input: Reader): Int {
@@ -110,7 +112,7 @@ fun main() {
         done = true
       }
     }
-    return cave.count { it.value == Sand }
+    return cave.apply { draw() }.count { it.value == Sand }
   }
 
   val testInput = """
@@ -120,8 +122,6 @@ fun main() {
   assert(part1(testInput.reader()) == 24)
   assert(part2(testInput.reader()) == 93)
 
-  val input = readInput("day14")
-
-  measureTimedValue { part1(input()) }.also(::println)
-  measureTimedValue { part2(input()) }.also(::println)
+  execute("day14", "Part 1", ::part1)
+  execute("day14", "Part 2", ::part2)
 }

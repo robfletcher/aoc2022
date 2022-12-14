@@ -72,7 +72,6 @@ fun main() {
   """.trimIndent()
   assert(part2(testInput2.reader()) == 36)
 
-  val input = readInput("day09")
-  part1(input()).also(::println).also { assert(it == 5858) }
-  part2(input()).also(::println).also { assert(it == 2602) }
+  execute("day09", "Part 1", ::part1)
+  execute("day09", "Part 2", ::part2)
 }

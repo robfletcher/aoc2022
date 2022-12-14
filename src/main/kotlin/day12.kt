@@ -4,8 +4,6 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import java.io.Reader
 import java.util.PriorityQueue
-import kotlin.time.ExperimentalTime
-import kotlin.time.measureTime
 
 typealias Terrain = Map<Coordinate, Char>
 
@@ -29,7 +27,6 @@ val Char.height
     else -> code
   }
 
-@OptIn(ExperimentalTime::class)
 fun main() {
   fun parseTerrain(input: Reader): Terrain {
     val terrain = mutableMapOf<Coordinate, Char>()
@@ -58,20 +55,20 @@ fun main() {
   fun Terrain.findShortestPath(from: Coordinate = this.start): Int? {
     val queue = (keys - from).map(::PathNode).let(::PriorityQueue)
     queue.add(PathNode(from, 0))
-    var winner: PathNode? = null
+    var winner: Int? = null
     while (winner == null && queue.isNotEmpty()) {
-      val current = queue.remove()
-      if (current.distance < Int.MAX_VALUE) {
-        if (current.coordinate == goal) {
-          winner = current
+      val (current, distance) = queue.remove()
+      if (distance < Int.MAX_VALUE) {
+        if (current == goal) {
+          winner = distance
         } else {
-          pathsFrom(current.coordinate).forEach { child ->
+          pathsFrom(current).forEach { child ->
             val childNode = queue.find { it.coordinate == child }
             if (childNode != null) {
-              val distance = current.distance + 1
-              if (distance < childNode.distance) {
+              val d = distance + 1
+              if (d < childNode.distance) {
                 queue.remove(childNode)
-                queue.add(PathNode(child, distance))
+                queue.add(PathNode(child, d))
               }
             }
           }
@@ -80,7 +77,7 @@ fun main() {
         break
       }
     }
-    return winner?.distance
+    return winner
   }
 
   fun part1(input: Reader) = runBlocking { parseTerrain(input).findShortestPath() }
@@ -111,9 +108,6 @@ fun main() {
   assert(part1(testInput.reader()) == 31)
   assert(part2(testInput.reader()) == 29)
 
-  val input = readInput("day12")
-  part1(input()).also(::println)
-  measureTime {
-    part2(input()).also(::println)
-  }.also(::println)
+  execute("day12", "Part 1", ::part1)
+  execute("day12", "Part 2", ::part2)
 }
