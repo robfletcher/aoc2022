@@ -50,41 +50,37 @@ fun main() {
       .filter {
         val currentHeight = getValue(coordinate).height
         val adjacentHeight = get(it)?.height
-        adjacentHeight != null && adjacentHeight >= currentHeight - 1
+        adjacentHeight != null && adjacentHeight <= currentHeight + 1
       }
       .shuffled()
 
   /** Dijkstra's algorithm. */
-  fun Terrain.findShortestPath(
-    from: Coordinate = this.goal,
-    to: Coordinate = this.start,
-    cache: MutableMap<Coordinate, Int> = mutableMapOf(from to 0)
-  ): Int {
-    if (cache.containsKey(to)) return cache.getValue(to)
-    val queue = (keys - from)
-      .map { PathNode(it, cache[it] ?: Int.MAX_VALUE) }
-      .let(::PriorityQueue)
-    queue.add(PathNode(from, cache.getValue(from)))
+  fun Terrain.findShortestPath(from: Coordinate = this.start): Int? {
+    val queue = (keys - from).map(::PathNode).let(::PriorityQueue)
+    queue.add(PathNode(from, 0))
     var winner: PathNode? = null
     while (winner == null && queue.isNotEmpty()) {
       val current = queue.remove()
-      if (current.coordinate == to) {
-        winner = current
-      } else if (current.distance != Int.MAX_VALUE) {
-        pathsFrom(current.coordinate).forEach { child ->
-          val childNode = queue.find { it.coordinate == child }
-          if (childNode != null) {
-            val distance = current.distance + 1
-            if (distance < childNode.distance) {
-              queue.remove(childNode)
-              queue.add(PathNode(child, distance))
-              cache[child] = distance
+      if (current.distance < Int.MAX_VALUE) {
+        if (current.coordinate == goal) {
+          winner = current
+        } else {
+          pathsFrom(current.coordinate).forEach { child ->
+            val childNode = queue.find { it.coordinate == child }
+            if (childNode != null) {
+              val distance = current.distance + 1
+              if (distance < childNode.distance) {
+                queue.remove(childNode)
+                queue.add(PathNode(child, distance))
+              }
             }
           }
         }
+      } else {
+        break
       }
     }
-    return checkNotNull(winner) { "No path found!" }.distance
+    return winner?.distance
   }
 
   fun part1(input: Reader) = runBlocking { parseTerrain(input).findShortestPath() }
@@ -92,13 +88,15 @@ fun main() {
   fun part2(input: Reader): Int {
     val terrain = parseTerrain(input)
     val startPoints = terrain.filter { it.value.height == 'a'.height }.keys
-    val cache = mutableMapOf(terrain.goal to 0)
     return runBlocking(Default) {
       startPoints.map {
         async {
-          terrain.findShortestPath(to = it, cache = cache)
+          terrain.findShortestPath(it)
         }
-      }.awaitAll().min()
+      }
+        .awaitAll()
+        .filterNotNull()
+        .min()
     }
   }
 
