@@ -2,6 +2,8 @@ import Tile.Rock
 import Tile.Sand
 import Tile.Source
 import java.io.Reader
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTimedValue
 
 enum class Tile {
   Rock, Sand, Source
@@ -16,8 +18,9 @@ val Cave.yRange
   get() = keys.minOf { it.y }..keys.maxOf { it.y }
 
 val Cave.depth
-  get() = yRange.last
+  get() = keys.maxOf { it.y }
 
+@OptIn(ExperimentalTime::class)
 fun main() {
   fun Cave.draw() {
     StringBuilder().apply {
@@ -56,18 +59,18 @@ fun main() {
       }
     }
 
-  fun Cave.findRest(current: Coordinate): Coordinate? =
-    if (current.y == depth) {
-      null
-    } else {
-      val nextPos = listOf(current.down(), current.down().left(), current.down().right())
-        .firstOrNull { !containsKey(it) }
-      if (nextPos == null) {
-        current
-      } else {
-        findRest(nextPos)
+  fun Cave.findRest(current: Coordinate, depth: Int): Coordinate? =
+    listOf(current.down(), current.down().left(), current.down().right())
+      .firstOrNull { !containsKey(it) }
+      .let { nextPos ->
+        if (nextPos == null) {
+          current
+        } else if (nextPos.y == depth) {
+          null
+        } else {
+          findRest(nextPos, depth)
+        }
       }
-    }
 
   fun Cave.findRestWithFloor(current: Coordinate, floor: Int): Coordinate =
     listOf(current.down(), current.down().left(), current.down().right())
@@ -85,14 +88,14 @@ fun main() {
 
     var done = false
     while (!done) {
-      val rest = cave.findRest(sourcePos)
+      val rest = cave.findRest(sourcePos, cave.depth)
       if (rest == null) {
         done = true
       } else {
         cave[rest] = Sand
       }
     }
-    return cave.apply { draw() }.count { it.value == Sand }
+    return cave.count { it.value == Sand }
   }
 
   fun part2(input: Reader): Int {
@@ -107,7 +110,7 @@ fun main() {
         done = true
       }
     }
-    return cave.apply { draw() }.count { it.value == Sand }
+    return cave.count { it.value == Sand }
   }
 
   val testInput = """
@@ -118,6 +121,7 @@ fun main() {
   assert(part2(testInput.reader()) == 93)
 
   val input = readInput("day14")
-  part1(input()).also(::println)
-  part2(input()).also(::println)
+
+  measureTimedValue { part1(input()) }.also(::println)
+  measureTimedValue { part2(input()) }.also(::println)
 }
