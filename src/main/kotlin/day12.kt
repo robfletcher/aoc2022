@@ -4,6 +4,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import java.io.Reader
 import java.util.PriorityQueue
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTime
 
 typealias Terrain = Map<Coordinate, Char>
 
@@ -27,6 +29,7 @@ val Char.height
     else -> code
   }
 
+@OptIn(ExperimentalTime::class)
 fun main() {
   fun parseTerrain(input: Reader): Terrain {
     val terrain = mutableMapOf<Coordinate, Char>()
@@ -47,18 +50,25 @@ fun main() {
       .filter {
         val currentHeight = getValue(coordinate).height
         val adjacentHeight = get(it)?.height
-        adjacentHeight != null && adjacentHeight <= currentHeight + 1
+        adjacentHeight != null && adjacentHeight >= currentHeight - 1
       }
       .shuffled()
 
   /** Dijkstra's algorithm. */
-  fun Terrain.findShortestPath(from: Coordinate = this.start): Int {
-    val queue = keys.minus(from).map(::PathNode).let(::PriorityQueue)
-    queue.add(PathNode(from, 0))
+  fun Terrain.findShortestPath(
+    from: Coordinate = this.goal,
+    to: Coordinate = this.start,
+    cache: MutableMap<Coordinate, Int> = mutableMapOf(from to 0)
+  ): Int {
+    if (cache.containsKey(to)) return cache.getValue(to)
+    val queue = (keys - from)
+      .map { PathNode(it, cache[it] ?: Int.MAX_VALUE) }
+      .let(::PriorityQueue)
+    queue.add(PathNode(from, cache.getValue(from)))
     var winner: PathNode? = null
     while (winner == null && queue.isNotEmpty()) {
       val current = queue.remove()
-      if (current.coordinate == goal) {
+      if (current.coordinate == to) {
         winner = current
       } else if (current.distance != Int.MAX_VALUE) {
         pathsFrom(current.coordinate).forEach { child ->
@@ -68,6 +78,7 @@ fun main() {
             if (distance < childNode.distance) {
               queue.remove(childNode)
               queue.add(PathNode(child, distance))
+              cache[child] = distance
             }
           }
         }
@@ -81,10 +92,11 @@ fun main() {
   fun part2(input: Reader): Int {
     val terrain = parseTerrain(input)
     val startPoints = terrain.filter { it.value.height == 'a'.height }.keys
+    val cache = mutableMapOf(terrain.goal to 0)
     return runBlocking(Default) {
       startPoints.map {
         async {
-          terrain.findShortestPath(it)
+          terrain.findShortestPath(to = it, cache = cache)
         }
       }.awaitAll().min()
     }
@@ -103,5 +115,7 @@ fun main() {
 
   val input = readInput("day12")
   part1(input()).also(::println)
-  part2(input()).also(::println)
+  measureTime {
+    part2(input()).also(::println)
+  }.also(::println)
 }
