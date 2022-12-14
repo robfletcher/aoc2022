@@ -1,6 +1,3 @@
-import kotlinx.coroutines.Dispatchers.Default
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import java.io.Reader
 import java.util.PriorityQueue
@@ -52,49 +49,39 @@ fun main() {
       .shuffled()
 
   /** Dijkstra's algorithm. */
-  fun Terrain.findShortestPath(from: Coordinate = this.start): Int? {
-    val queue = (keys - from).map(::PathNode).let(::PriorityQueue)
-    queue.add(PathNode(from, 0))
+  fun Terrain.findShortestPath(startPoints: Set<Coordinate>): Int? {
+    val queue = (keys - startPoints).map(::PathNode).let(::PriorityQueue)
+    startPoints.map { PathNode(it, 0) }.let(queue::addAll)
     var winner: Int? = null
     while (winner == null && queue.isNotEmpty()) {
       val (current, distance) = queue.remove()
-      if (distance < Int.MAX_VALUE) {
-        if (current == goal) {
-          winner = distance
-        } else {
-          pathsFrom(current).forEach { child ->
-            val childNode = queue.find { it.coordinate == child }
-            if (childNode != null) {
-              val d = distance + 1
-              if (d < childNode.distance) {
-                queue.remove(childNode)
-                queue.add(PathNode(child, d))
-              }
+      if (current == goal) {
+        winner = distance
+      } else {
+        pathsFrom(current).forEach { child ->
+          val childNode = queue.find { it.coordinate == child }
+          if (childNode != null) {
+            val d = distance + 1
+            if (d < childNode.distance) {
+              queue.remove(childNode)
+              queue.add(PathNode(child, d))
             }
           }
         }
-      } else {
-        break
       }
     }
     return winner
   }
 
-  fun part1(input: Reader) = runBlocking { parseTerrain(input).findShortestPath() }
+  fun part1(input: Reader) = runBlocking {
+    val terrain = parseTerrain(input)
+    terrain.findShortestPath(setOf(terrain.start))
+  }
 
   fun part2(input: Reader): Int {
     val terrain = parseTerrain(input)
     val startPoints = terrain.filter { it.value.height == 'a'.height }.keys
-    return runBlocking(Default) {
-      startPoints.map {
-        async {
-          terrain.findShortestPath(it)
-        }
-      }
-        .awaitAll()
-        .filterNotNull()
-        .min()
-    }
+    return terrain.findShortestPath(startPoints.toSet()) ?: error("No paths found!")
   }
 
   val testInput = """
