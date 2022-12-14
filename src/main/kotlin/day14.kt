@@ -19,7 +19,6 @@ val Cave.depth
   get() = yRange.last
 
 fun main() {
-
   fun Cave.draw() {
     StringBuilder().apply {
       yRange.forEach { y ->
@@ -37,59 +36,78 @@ fun main() {
     }
   }
 
-  fun scanCave(reader: Reader): Cave {
-    val cave = mutableMapOf<Coordinate, Tile>()
-    reader.forEachLine { line ->
-      line
-        .split(" -> ")
-        .map { it.split(',', limit = 2).let { (x, y) -> Coordinate(x.toInt(), y.toInt()) } }
-        .windowed(2)
-        .forEach { (prev, next) ->
-          val direction = if (prev.x == next.x) Coordinate::y else Coordinate::x
-          listOf(direction.get(prev), direction.get(next))
-            .sorted()
-            .let { (start, end) -> start..end }
-            .forEach { i ->
-              when (direction) {
-                Coordinate::x -> prev.copy(x = i)
-                else -> prev.copy(y = i)
-              }
-                .let { cave[it] = Rock }
-            }
-        }
-    }
-    return cave
-  }
+  val sourcePos = Coordinate(500, 0)
 
-  fun Cave.findRestPosition(sandPos: Coordinate): Coordinate? =
-    if (sandPos.y == depth) {
-      null
-    } else {
-      val nextPos = listOf(sandPos.down(), sandPos.down().left(), sandPos.down().right())
-        .firstOrNull { !containsKey(it) }
-      if (nextPos == null) {
-        sandPos
-      } else {
-        findRestPosition(nextPos)
+  fun scanCave(reader: Reader) =
+    mutableMapOf(sourcePos to Source).apply {
+      reader.forEachLine { line ->
+        line
+          .split(" -> ")
+          .map { it.split(',', limit = 2).let { (x, y) -> Coordinate(x.toInt(), y.toInt()) } }
+          .windowed(2)
+          .forEach { (start, end) ->
+            val direction = if (start.x == end.x) Coordinate::y else Coordinate::x
+            listOf(direction.get(start), direction.get(end))
+              .let { it.min()..it.max() }
+              .forEach { i ->
+                put(if (direction == Coordinate::x) start.copy(x = i) else start.copy(y = i), Rock)
+              }
+          }
       }
     }
 
-  fun part1(reader: Reader): Int {
-    val sourcePos = Coordinate(500, 0)
-    val cave = scanCave(reader).also { it[sourcePos] = Source }
+  fun Cave.findRest(current: Coordinate): Coordinate? =
+    if (current.y == depth) {
+      null
+    } else {
+      val nextPos = listOf(current.down(), current.down().left(), current.down().right())
+        .firstOrNull { !containsKey(it) }
+      if (nextPos == null) {
+        current
+      } else {
+        findRest(nextPos)
+      }
+    }
+
+  fun Cave.findRestWithFloor(current: Coordinate, floor: Int): Coordinate =
+    listOf(current.down(), current.down().left(), current.down().right())
+      .firstOrNull { !containsKey(it) }
+      .let { nextPos ->
+        if (nextPos == null || nextPos.y == floor) {
+          current
+        } else {
+          findRestWithFloor(nextPos, floor)
+        }
+      }
+
+  fun part1(input: Reader): Int {
+    val cave = scanCave(input)
 
     var done = false
     while (!done) {
-      val rest = cave.findRestPosition(sourcePos.copy(y = 1))
+      val rest = cave.findRest(sourcePos)
       if (rest == null) {
         done = true
       } else {
         cave[rest] = Sand
       }
     }
+    return cave.apply { draw() }.count { it.value == Sand }
+  }
 
-    cave.draw()
-    return cave.count { it.value == Sand }
+  fun part2(input: Reader): Int {
+    val cave = scanCave(input)
+    val floor = cave.depth + 2
+
+    var done = false
+    while (!done) {
+      val rest = cave.findRestWithFloor(sourcePos, floor)
+      cave[rest] = Sand
+      if (rest == sourcePos) {
+        done = true
+      }
+    }
+    return cave.apply { draw() }.count { it.value == Sand }
   }
 
   val testInput = """
@@ -97,7 +115,9 @@ fun main() {
     503,4 -> 502,4 -> 502,9 -> 494,9
   """.trimIndent()
   assert(part1(testInput.reader()) == 24)
+  assert(part2(testInput.reader()) == 93)
 
   val input = readInput("day14")
   part1(input()).also(::println)
+  part2(input()).also(::println)
 }
