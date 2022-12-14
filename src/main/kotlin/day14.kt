@@ -11,38 +11,15 @@ enum class Tile {
 
 typealias Cave = MutableMap<Coordinate, Tile>
 
-val Cave.xRange
-  get() = keys.minOf { it.x }..keys.maxOf { it.x }
-
-val Cave.yRange
-  get() = keys.minOf { it.y }..keys.maxOf { it.y }
-
 val Cave.depth
   get() = keys.maxOf { it.y }
 
 fun main() {
-  fun Cave.draw() {
-    StringBuilder().apply {
-      yRange.forEach { y ->
-        xRange.forEach { x ->
-          when (get(Coordinate(x, y))) {
-            Rock -> append('#')
-            Sand -> append('o')
-            Source -> append('+')
-            null -> append(' ')
-          }
-        }
-        append('\n')
-      }
-      println(toString())
-    }
-  }
-
   val sourcePos = Coordinate(500, 0)
 
   fun Pair<Coordinate, Coordinate>.forEachBetween(action: (Coordinate) -> Unit) {
     for (x in min(first.x, second.x)..max(first.x, second.x)) {
-      for (y in min(first.y, second.y).. max(first.y, second.y)) {
+      for (y in min(first.y, second.y)..max(first.y, second.y)) {
         action(Coordinate(x, y))
       }
     }
@@ -97,7 +74,7 @@ fun main() {
         cave[rest] = Sand
       }
     }
-    return cave.apply { draw() }.count { it.value == Sand }
+    return cave.count { it.value == Sand }
   }
 
   fun part2(input: Reader): Int {
@@ -112,7 +89,7 @@ fun main() {
         done = true
       }
     }
-    return cave.apply { draw() }.count { it.value == Sand }
+    return cave.count { it.value == Sand }
   }
 
   val testInput = """
