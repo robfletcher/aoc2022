@@ -10,12 +10,19 @@ data class Sensor(
 ) {
   val beaconDistance by lazy { location.manhattanDistanceFrom(closestBeacon) }
 
-  fun guaranteeNoBeacons(at: Coordinate): Boolean =
-    at != closestBeacon && at.manhattanDistanceFrom(location) <= beaconDistance
+  private val exclusionZone: MutableMap<Int, IntRange> = mutableMapOf()
+  fun columnsWithNoBeacons(row: Int): IntRange =
+    exclusionZone.computeIfAbsent(row) { y ->
+      (beaconDistance - abs(location.y - y)).let { x ->
+        (location.x - x)..(location.x + x)
+      }
+    }
 }
 
-val Iterable<Sensor>.xRange: IntRange
-  get() = minOf { it.location.x - it.beaconDistance }..maxOf { it.location.x + it.beaconDistance }
+fun Iterable<Sensor>.columnsWithNoBeacons(row: Int): Set<Int> =
+  flatMapTo(mutableSetOf()) { s ->
+    s.columnsWithNoBeacons(row)
+  }
 
 fun main() {
   fun deploySensors(reader: Reader) =
@@ -37,13 +44,22 @@ fun main() {
         .toList()
     }
 
-  fun part1(reader: Reader, row: Int): Int {
+  fun part1(reader: Reader, y: Int): Int {
     val sensors = deploySensors(reader)
-    return sensors.xRange
-      .map { Coordinate(it, row) }
-      .sumOf { at ->
-        if (sensors.any { it.guaranteeNoBeacons(at) }) 1L else 0L
-      }.toInt()
+    return (sensors
+      .flatMapTo(mutableSetOf()) { it.columnsWithNoBeacons(y) }
+      - sensors.flatMap { if (it.closestBeacon.y == y) setOf(it.closestBeacon.x) else emptySet() }.toSet()).size
+  }
+
+  fun part2(reader: Reader, searchSpace: IntRange): Int {
+    val sensors = deploySensors(reader)
+    val beaconPosition = searchSpace.firstNotNullOf { y ->
+      println("Checking $y")
+      val x = (searchSpace - sensors.columnsWithNoBeacons(y)).firstOrNull()
+      x?.let { Coordinate(it, y) }
+    }
+    println("Found beacon at $beaconPosition")
+    return (beaconPosition.x * 4000000) + beaconPosition.y
   }
 
   val testInput = """
@@ -64,6 +80,8 @@ fun main() {
   """.trimIndent()
 
   assert(part1(testInput.reader(), 10) == 26)
+  assert(part2(testInput.reader(), 0..20) == 56000011)
 
   execute("day15", "Part 1") { input -> part1(input, 2000000) }.let { assert(it == 5878678) }
+  execute("day15", "Part 2") { input -> part2(input, 0..4000000) } //.let { assert(it == 5878678) }
 }
