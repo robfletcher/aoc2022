@@ -10,25 +10,25 @@ data class Sensor(
 ) {
   private val beaconDistance by lazy { location.manhattanDistanceFrom(closestBeacon) }
 
-  fun columnsWithNoBeacons(row: Int) =
-    (beaconDistance - abs(location.y - row)).let { x ->
+  fun columnsWithNoBeacons(y: Int) =
+    (beaconDistance - abs(location.y - y)).let { x ->
       (location.x - x)..(location.x + x)
     }
 }
 
 @OptIn(ExperimentalStdlibApi::class)
-fun IntRange.exclude(r: IntRange): List<IntRange> {
-  if (this.isEmpty() || (r.first <= first && r.last >= last)) return emptyList()
-  if (r.isEmpty() || r.first > last || r.last < first) return listOf(this)
-  val ranges = mutableListOf<IntRange>()
-  if (first < r.first) ranges.add(first..<r.first)
-  if (last > r.last) ranges.add(r.last + 1..last)
-  return ranges
-}
+fun IntRange.exclude(r: IntRange) =
+  when {
+    this.isEmpty() || r.first <= first && r.last >= last -> emptyList()
+    r.isEmpty() || r.first > last || r.last < first -> listOf(this)
+    r.first <= first -> listOf(r.last + 1..last)
+    r.last >= last -> listOf(first..<r.first)
+    else -> listOf(first..<r.first, r.last + 1..last)
+  }
 
-fun excludeColumnsWithNoBeacons(sensors: Iterable<Sensor>, row: Int, columns: IntRange): List<IntRange> =
-  sensors.fold(listOf(columns)) { ranges: List<IntRange>, sensor: Sensor ->
-    ranges.flatMap { it.exclude(sensor.columnsWithNoBeacons(row)) }
+fun Iterable<Sensor>.excludeColumnsWithNoBeacons(xs: IntRange, y: Int): List<IntRange> =
+  fold(listOf(xs)) { ranges: List<IntRange>, sensor: Sensor ->
+    ranges.flatMap { it.exclude(sensor.columnsWithNoBeacons(y)) }
   }
 
 fun main() {
@@ -61,11 +61,11 @@ fun main() {
   fun part2(reader: Reader, searchSpace: IntRange): Long {
     val sensors = deploySensors(reader)
     val beaconPosition = searchSpace.firstNotNullOf { y ->
-      excludeColumnsWithNoBeacons(sensors, y, searchSpace)
+      sensors.excludeColumnsWithNoBeacons(searchSpace, y)
         .firstOrNull()
         ?.let { Coordinate(it.first, y) }
     }
-    return (beaconPosition.x * 4000000L) + beaconPosition.y
+    return beaconPosition.run { (x * 4000000L) + y }
   }
 
   assert((1..10).exclude(IntRange.EMPTY) == listOf(1..10))
